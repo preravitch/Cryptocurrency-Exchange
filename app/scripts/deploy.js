@@ -1,33 +1,33 @@
-// We require the Hardhat Runtime Environment explicitly here. This is optional
-// but useful for running the script in a standalone fashion through `node <script>`.
-//
-// You can also run a script with `npx hardhat run <script>`. If you do that, Hardhat
-// will compile your contracts, add the Hardhat Runtime Environment's members to the
-// global scope, and execute the script.
+// scripts/deploy.js
 const hre = require("hardhat");
 
 async function main() {
-  const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  const unlockTime = currentTimestampInSeconds + 60;
+    // Deploy the Exchange Contract
+    const Exchange = await hre.ethers.getContractFactory("MockExchange");
+    const exchange = await Exchange.deploy(); // Add constructor arguments if any
+    await exchange.deployed();
+    console.log("Exchange deployed to:", exchange.address);
 
-  const lockedAmount = hre.ethers.parseEther("0.001");
+    // Deploy MockBTC
+    const MockBTC = await hre.ethers.getContractFactory("MockBTC");
+    const mockBTC = await MockBTC.deploy(exchange.address);
+    await mockBTC.deployed();
+    console.log("MockBTC deployed to:", mockBTC.address);
 
-  const lock = await hre.ethers.deployContract("Lock", [unlockTime], {
-    value: lockedAmount,
-  });
+    // Deploy MockETH
+    const MockETH = await hre.ethers.getContractFactory("MockETH");
+    const mockETH = await MockETH.deploy(exchange.address);
+    await mockETH.deployed();
+    console.log("MockETH deployed to:", mockETH.address);
 
-  await lock.waitForDeployment();
-
-  console.log(
-    `Lock with ${ethers.formatEther(
-      lockedAmount
-    )}ETH and unlock timestamp ${unlockTime} deployed to ${lock.target}`
-  );
+    // Deploy MockUSDT
+    const MockUSDT = await hre.ethers.getContractFactory("MockUSDT");
+    const mockUSDT = await MockUSDT.deploy(exchange.address);
+    await mockUSDT.deployed();
+    console.log("MockUSDT deployed to:", mockUSDT.address);
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
 main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
+    console.error(error);
+    process.exitCode = 1;
 });

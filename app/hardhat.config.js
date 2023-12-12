@@ -1,6 +1,12 @@
-require("@nomicfoundation/hardhat-toolbox");
+require("@nomiclabs/hardhat-waffle");
 
-/** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
-  solidity: "0.8.19",
+  solidity: "0.8.4",
+  networks: {
+    hardhat: {
+      // No URL needed for the default Hardhat network
+    },
+    // You can define other networks here
+  },
+  // Additional configurations
 };
