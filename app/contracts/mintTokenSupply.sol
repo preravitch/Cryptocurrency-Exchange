@@ -4,19 +4,25 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract MockBTC is ERC20 {
-    constructor() ERC20("Bitcoin", "BTC") {
-        _mint(msg.sender, 1000000 * 10 ** decimals()); // Mint 1 million mock BTC for testing
+    constructor() ERC20("Bitcoin", "BTC") {}
+
+    function mintToExchange(address exchangeAddress, uint256 amount) public {
+        _mint(exchangeAddress, amount);
     }
 }
 
 contract MockETH is ERC20 {
-    constructor() ERC20("Ethereum", "ETH") {
-        _mint(msg.sender, 1000000 * 10 ** decimals()); // Mint 1 million mock ETH for testing
+    constructor() ERC20("Ethereum", "ETH") {}
+
+    function mintToExchange(address exchangeAddress, uint256 amount) public {
+        _mint(exchangeAddress, amount);
     }
 }
 
 contract MockUSDT is ERC20 {
-    constructor() ERC20("Tether", "USDT") {
-        _mint(msg.sender, 1000000 * 10 ** decimals()); // Mint 1 million mock USDT for testing
+    constructor() ERC20("Tether", "USDT") {}
+
+    function mintToExchange(address exchangeAddress, uint256 amount) public {
+        _mint(exchangeAddress, amount);
     }
 }

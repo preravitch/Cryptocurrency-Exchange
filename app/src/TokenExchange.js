@@ -37,9 +37,25 @@ const TokenExchange = ({ web3, accounts, contract }) => {
     const executeTrade = async () => {
         if (!contract) return;
 
-        // Example function call: adjust based on your contract
-        await contract.methods.trade(fromToken, toToken, amount, calculatedAmount).send({ from: accounts[0] });
-        alert('Trade executed');
+        try {
+            if (fromToken === 'ETH') {
+                // Trading ETH for a token
+                await contract.methods.tradeEthForToken(toToken, calculatedAmount)
+                    .send({ from: accounts[0], value: web3.utils.toWei(amount.toString(), 'ether') });
+            } else if (toToken === 'ETH') {
+                // Trading a token for ETH
+                await contract.methods.tradeTokenForEth(fromToken, web3.utils.toWei(amount.toString(), 'ether'), calculatedAmount)
+                    .send({ from: accounts[0] });
+            } else {
+                // Trading ERC-20 tokens
+                await contract.methods.trade(fromToken, toToken, amount, calculatedAmount)
+                    .send({ from: accounts[0] });
+            }
+            alert('Trade executed');
+        } catch (error) {
+            console.error('Trade execution error:', error);
+            alert('Trade failed. See console for details.');
+        }
     };
 
     return (

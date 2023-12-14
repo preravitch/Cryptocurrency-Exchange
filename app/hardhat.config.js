@@ -1,12 +1,14 @@
 require("@nomiclabs/hardhat-waffle");
 
 module.exports = {
-  solidity: "0.8.4",
+  solidity: "0.8.20",
   networks: {
     hardhat: {
-      // No URL needed for the default Hardhat network
+      chainId: 1337
     },
     // You can define other networks here
   },
-  // Additional configurations
+  paths: {
+    artifacts: "./src/artifacts",
+  }
 };
