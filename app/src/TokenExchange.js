@@ -78,6 +78,16 @@ const TokenExchange = ({ web3, accounts, contract }) => {
         setCalculatedAmountforshow(show)
     };
 
+    const handleSwapButtonClick = () => {
+        const tempFromToken = fromToken;
+        const tempvalue = calculatedAmountforshow;
+        const tempamount = amount;
+        setFromToken(toToken);
+        setToToken(tempFromToken);
+        setAmount(tempvalue);
+        setCalculatedAmountforshow(tempamount);
+    };
+
     
     const executeTrade = async () => {
         if (!contract) return;
@@ -120,6 +130,7 @@ const TokenExchange = ({ web3, accounts, contract }) => {
                 </select>
                 <input type="number" value={amount} onChange={handleAmountChange} />
             </div>
+            <button onClick={handleSwapButtonClick}>Switch</button>
             <div>
                 <label>To: </label>
                 <select value={toToken} onChange={handleToTokenChange}>
@@ -129,7 +140,7 @@ const TokenExchange = ({ web3, accounts, contract }) => {
                 </select>
                 <input type="text" value={calculatedAmountforshow} readOnly />
             </div>
-            <button onClick={executeTrade}>Trade</button>
+            <button onClick={executeTrade}>Swap</button>
         </div>
     );
 };
