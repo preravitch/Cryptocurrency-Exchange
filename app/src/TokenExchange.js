@@ -1,17 +1,14 @@
 import React, { useState } from 'react';
 import BN from 'bn.js';
 
-const TokenExchange = ({ web3, accounts, contract }) => {
+const TokenExchange = ({ web3, accounts, contract, tokenAddresses, updateTokenBalances, platformTokenBalances, userTokenBalances }) => {
     const [fromToken, setFromToken] = useState('ETH');
     const [toToken, setToToken] = useState('BTC');
     const [amount, setAmount] = useState(0);
     const [calculatedAmount, setCalculatedAmount] = useState(0);
     const [calculatedAmountforshow, setCalculatedAmountforshow] = useState(0);
-
-    const TOKEN_ADDRESSES = {
-        "BTC": "0x5FbDB2315678afecb367f032d93F642f64180aa3", 
-        "USDT": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512" 
-    };
+    const [userBalanceWarning, setUserBalanceWarning] = useState('');
+    const [platformBalanceWarning, setPlatformBalanceWarning] = useState('');
 
     const erc20Abi = [
         {
@@ -36,14 +33,14 @@ const TokenExchange = ({ web3, accounts, contract }) => {
         }
       ];
     
-    const checkAllowance = async (tokenSymbol, owner, spender) => {
-        const tokenAddress = TOKEN_ADDRESSES[tokenSymbol];
+      const checkAllowance = async (tokenSymbol, owner, spender) => {
+        const tokenAddress = tokenAddresses[tokenSymbol];
         const tokenContract = new web3.eth.Contract(erc20Abi, tokenAddress);
         return await tokenContract.methods.allowance(owner, spender).call();
     };
-    
+
     const setAllowance = async (tokenSymbol, spender, amount) => {
-        const tokenAddress = TOKEN_ADDRESSES[tokenSymbol];
+        const tokenAddress = tokenAddresses[tokenSymbol];
         const tokenContract = new web3.eth.Contract(erc20Abi, tokenAddress);
         await tokenContract.methods.approve(spender, amount).send({ from: accounts[0] });
     };
@@ -54,20 +51,49 @@ const TokenExchange = ({ web3, accounts, contract }) => {
         "USDT": { "ETH": 1/3000, "BTC": 1/40000 }
     };
 
+    const checkBalances = (fromToken, toToken, fromAmount, toAmount) => {
+        setUserBalanceWarning('');
+        setPlatformBalanceWarning('');
+    
+        // Check user balance for the 'from' token
+        const fromTokenBalance = fromToken === 'ETH' ? 
+            userTokenBalances['ETH'] : 
+            userTokenBalances[fromToken];
+        if (new BN(fromTokenBalance).lt(new BN(web3.utils.toWei(fromAmount.toString(), 'ether')))) {
+            setUserBalanceWarning('Insufficient user balance for the trade.');
+        }
+    
+        // Check platform balance for the 'to' token
+        const toTokenBalance = toToken === 'ETH' ? 
+            platformTokenBalances['ETH'] : 
+            platformTokenBalances[toToken];
+        if (new BN(toTokenBalance).lt(new BN(toAmount))) {
+            setPlatformBalanceWarning('Insufficient platform balance for the trade.');
+        }
+    };
+
     const handleFromTokenChange = (e) => {
         setFromToken(e.target.value);
         updateExchangeRate(e.target.value, toToken);
+        checkBalances(e.target.value, toToken, amount, calculatedAmountforshow);
     };
 
     const handleToTokenChange = (e) => {
         setToToken(e.target.value);
         updateExchangeRate(fromToken, e.target.value);
+        checkBalances(fromToken, e.target.value, amount, calculatedAmountforshow);
     };
 
     const handleAmountChange = (e) => {
         const inputAmount = e.target.value;
         setAmount(inputAmount);
         updateExchangeRate(fromToken, toToken, inputAmount);
+
+        setUserBalanceWarning('');
+        setPlatformBalanceWarning('');
+
+        checkBalances(fromToken, toToken, inputAmount, calculatedAmountforshow);
+    
     };
 
     const updateExchangeRate = (from, to, inputAmount = amount) => {
@@ -80,12 +106,20 @@ const TokenExchange = ({ web3, accounts, contract }) => {
 
     const handleSwapButtonClick = () => {
         const tempFromToken = fromToken;
-        const tempvalue = calculatedAmountforshow;
-        const tempamount = amount;
-        setFromToken(toToken);
+        const tempToToken = toToken;
+        const tempAmount = amount;
+        const tempCalculatedAmountForShow = calculatedAmountforshow;
+
+        setFromToken(tempToToken);
         setToToken(tempFromToken);
-        setAmount(tempvalue);
-        setCalculatedAmountforshow(tempamount);
+        setAmount(tempCalculatedAmountForShow);
+        setCalculatedAmountforshow(tempAmount);
+
+        // Reset warnings
+        setUserBalanceWarning('');
+        setPlatformBalanceWarning('');
+
+        checkBalances(tempToToken, tempFromToken, tempCalculatedAmountForShow, tempAmount);
     };
 
     
@@ -112,6 +146,7 @@ const TokenExchange = ({ web3, accounts, contract }) => {
                     .send({ from: accounts[0] });
             }
             alert('Trade executed');
+            await updateTokenBalances();
         } catch (error) {
             console.error('Trade execution error:', error);
             alert('Trade failed. See console for details.');
@@ -122,6 +157,7 @@ const TokenExchange = ({ web3, accounts, contract }) => {
         <div>
             <h2>Token Exchange</h2>
             <div>
+                {userBalanceWarning && <p style={{ color: 'red' }}>{userBalanceWarning}</p>}
                 <label>From: </label>
                 <select value={fromToken} onChange={handleFromTokenChange}>
                     <option value="ETH">ETH</option>
@@ -139,6 +175,7 @@ const TokenExchange = ({ web3, accounts, contract }) => {
                     <option value="USDT">USDT</option>
                 </select>
                 <input type="text" value={calculatedAmountforshow} readOnly />
+                {platformBalanceWarning && <p style={{ color: 'red' }}>{platformBalanceWarning}</p>}
             </div>
             <button onClick={executeTrade}>Swap</button>
         </div>
