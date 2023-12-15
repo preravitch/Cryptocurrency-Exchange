@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import BN from 'bn.js';
 
 const TokenExchange = ({ web3, accounts, contract, tokenAddresses, updateTokenBalances, platformTokenBalances, userTokenBalances }) => {
@@ -9,6 +9,25 @@ const TokenExchange = ({ web3, accounts, contract, tokenAddresses, updateTokenBa
     const [calculatedAmountforshow, setCalculatedAmountforshow] = useState(0);
     const [userBalanceWarning, setUserBalanceWarning] = useState('');
     const [platformBalanceWarning, setPlatformBalanceWarning] = useState('');
+    const [exchangeRates, setExchangeRates] = useState({ 'BTC': 40000, 'ETH': 3000, 'USDT': 1 });
+
+    useEffect(() => {
+        const fetchExchangeRates = async () => {
+            try {
+                const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd');
+                const data = await response.json();
+                setExchangeRates({
+                    'BTC': data.bitcoin.usd,
+                    'ETH': data.ethereum.usd,
+                    'USDT': 1
+                });
+            } catch (error) {
+                console.error('Error fetching exchange rates:', error);
+            }
+        };
+
+        fetchExchangeRates();
+    }, []);
 
     const erc20Abi = [
         {
@@ -43,12 +62,6 @@ const TokenExchange = ({ web3, accounts, contract, tokenAddresses, updateTokenBa
         const tokenAddress = tokenAddresses[tokenSymbol];
         const tokenContract = new web3.eth.Contract(erc20Abi, tokenAddress);
         await tokenContract.methods.approve(spender, amount).send({ from: accounts[0] });
-    };
-    
-    const tokenValues = {
-        "ETH": { "BTC": 0.07, "USDT": 3000 },
-        "BTC": { "ETH": 14, "USDT": 40000 },
-        "USDT": { "ETH": 1/3000, "BTC": 1/40000 }
     };
 
     const checkBalances = (fromToken, toToken, fromAmount, toAmount) => {
@@ -97,11 +110,11 @@ const TokenExchange = ({ web3, accounts, contract, tokenAddresses, updateTokenBa
     };
 
     const updateExchangeRate = (from, to, inputAmount = amount) => {
-        const rate = tokenValues[from][to] || 0;
-        const calculated = inputAmount * rate * Math.pow(10, 18); // Assuming 18 decimals for simplicity
+        const rate = (exchangeRates[from] / exchangeRates[to]) || 0;
+        const calculated = inputAmount * rate * Math.pow(10, 18);
         setCalculatedAmount(calculated);
         const show = calculated / Math.pow(10, 18);
-        setCalculatedAmountforshow(show)
+        setCalculatedAmountforshow(show);
     };
 
     const handleSwapButtonClick = () => {
@@ -128,7 +141,7 @@ const TokenExchange = ({ web3, accounts, contract, tokenAddresses, updateTokenBa
 
         try {
             if (fromToken !== 'ETH') {
-                const fromTokenAmount = web3.utils.toWei(amount.toString(), 'ether'); // Adjust this based on the actual decimals of `fromToken`
+                const fromTokenAmount = web3.utils.toWei(amount.toString(), 'ether');
                 const allowance = await checkAllowance(fromToken, accounts[0], contract.options.address);
                 if (new BN(allowance).lt(new BN(fromTokenAmount))) {
                     await setAllowance(fromToken, contract.options.address, fromTokenAmount);
@@ -156,6 +169,8 @@ const TokenExchange = ({ web3, accounts, contract, tokenAddresses, updateTokenBa
     return (
         <div>
             <h2>Token Exchange</h2>
+            <p>Current BTC Price: ${exchangeRates['BTC']}</p>
+            <p>Current ETH Price: ${exchangeRates['ETH']}</p>
             <div>
                 {userBalanceWarning && <p style={{ color: 'red' }}>{userBalanceWarning}</p>}
                 <label>From: </label>
