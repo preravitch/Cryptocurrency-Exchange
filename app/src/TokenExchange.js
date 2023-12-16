@@ -10,6 +10,8 @@ const TokenExchange = ({ web3, accounts, contract, tokenAddresses, updateTokenBa
     const [userBalanceWarning, setUserBalanceWarning] = useState('');
     const [platformBalanceWarning, setPlatformBalanceWarning] = useState('');
     const [exchangeRates, setExchangeRates] = useState({ 'BTC': 40000, 'ETH': 3000, 'USDT': 1 });
+    const [feePercentage, setFeePercentage] = useState(1/100);
+    const [calculatedFee, setCalculatedFee] = useState(0);
 
     useEffect(() => {
         const fetchExchangeRates = async () => {
@@ -111,11 +113,17 @@ const TokenExchange = ({ web3, accounts, contract, tokenAddresses, updateTokenBa
 
     const updateExchangeRate = (from, to, inputAmount = amount) => {
         const rate = (exchangeRates[from] / exchangeRates[to]) || 0;
-        const calculated = inputAmount * rate * Math.pow(10, 18);
-        setCalculatedAmount(calculated);
-        const show = calculated / Math.pow(10, 18);
+        const calculated = Math.ceil(inputAmount * rate * Math.pow(10, 18));
+        
+    
+        const fee = Math.ceil(calculated * feePercentage / 100);
+        setCalculatedFee(fee);
+        setCalculatedAmount(calculated - fee);
+    
+        const show = (calculated - fee) / Math.pow(10, 18);
         setCalculatedAmountforshow(show);
     };
+    
 
     const handleSwapButtonClick = () => {
         const tempFromToken = fromToken;
@@ -169,8 +177,8 @@ const TokenExchange = ({ web3, accounts, contract, tokenAddresses, updateTokenBa
     return (
         <div>
             <h2>Token Exchange</h2>
-            <p>Current BTC Price: ${exchangeRates['BTC']}</p>
-            <p>Current ETH Price: ${exchangeRates['ETH']}</p>
+            <p>BTC/USDT ${exchangeRates['BTC']}</p>
+            <p>ETH/USDT ${exchangeRates['ETH']}</p>
             <div>
                 {userBalanceWarning && <p style={{ color: 'red' }}>{userBalanceWarning}</p>}
                 <label>From: </label>
@@ -190,6 +198,7 @@ const TokenExchange = ({ web3, accounts, contract, tokenAddresses, updateTokenBa
                     <option value="USDT">USDT</option>
                 </select>
                 <input type="text" value={calculatedAmountforshow} readOnly />
+                <p>Fee 0.01%: {web3.utils.fromWei(calculatedFee.toString(), 'ether')} {toToken}</p>
                 {platformBalanceWarning && <p style={{ color: 'red' }}>{platformBalanceWarning}</p>}
             </div>
             <button onClick={executeTrade}>Swap</button>
