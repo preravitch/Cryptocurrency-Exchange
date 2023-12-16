@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import BN from 'bn.js';
+import BigNumber from 'bignumber.js';
 
 const TokenExchange = ({ web3, accounts, contract, tokenAddresses, updateTokenBalances, platformTokenBalances, userTokenBalances }) => {
     const [fromToken, setFromToken] = useState('ETH');
@@ -74,7 +74,7 @@ const TokenExchange = ({ web3, accounts, contract, tokenAddresses, updateTokenBa
         const fromTokenBalance = fromToken === 'ETH' ? 
             userTokenBalances['ETH'] : 
             userTokenBalances[fromToken];
-        if (new BN(fromTokenBalance).lt(new BN(web3.utils.toWei(fromAmount.toString(), 'ether')))) {
+        if (new BigNumber(fromTokenBalance).isLessThan(new BigNumber(web3.utils.toWei(fromAmount.toString(), 'ether')))) {
             setUserBalanceWarning('Insufficient user balance for the trade.');
         }
     
@@ -82,7 +82,7 @@ const TokenExchange = ({ web3, accounts, contract, tokenAddresses, updateTokenBa
         const toTokenBalance = toToken === 'ETH' ? 
             platformTokenBalances['ETH'] : 
             platformTokenBalances[toToken];
-        if (new BN(toTokenBalance).lt(new BN(toAmount))) {
+        if (new BigNumber(toTokenBalance).isLessThan(new BigNumber(toAmount))) {
             setPlatformBalanceWarning('Insufficient platform balance for the trade.');
         }
     };
@@ -110,17 +110,28 @@ const TokenExchange = ({ web3, accounts, contract, tokenAddresses, updateTokenBa
         checkBalances(fromToken, toToken, inputAmount, calculatedAmountforshow);
     
     };
-
+    
     const updateExchangeRate = (from, to, inputAmount = amount) => {
         const rate = (exchangeRates[from] / exchangeRates[to]) || 0;
-        const calculated = Math.ceil(inputAmount * rate * Math.pow(10, 18));
-        
     
-        const fee = Math.ceil(calculated * feePercentage / 100);
-        setCalculatedFee(fee);
-        setCalculatedAmount(calculated - fee);
+        // Convert the input amount to a BigNumber to handle large numbers
+        const inputAmountBN = new BigNumber(inputAmount);
     
-        const show = (calculated - fee) / Math.pow(10, 18);
+        // Calculate the converted amount
+        const calculated = inputAmountBN.multipliedBy(rate).multipliedBy(new BigNumber(10).pow(18));
+    
+        // Calculate the fee
+        const fee = calculated.multipliedBy(feePercentage).dividedBy(100);
+    
+        // Calculate the net amount after deducting the fee
+        const netAmount = calculated.minus(fee);
+    
+        // Convert BigNumbers to strings for Ethereum transaction
+        setCalculatedFee(fee.toFixed(0)); // No decimals for fee
+        setCalculatedAmount(netAmount.toFixed(0)); // No decimals for amount
+    
+        // Convert the net amount to a human-readable format for display
+        const show = netAmount.dividedBy(new BigNumber(10).pow(18)).toFixed(7); // 7 decimal places for display
         setCalculatedAmountforshow(show);
     };
     
@@ -146,16 +157,16 @@ const TokenExchange = ({ web3, accounts, contract, tokenAddresses, updateTokenBa
     
     const executeTrade = async () => {
         if (!contract) return;
-
+    
         try {
             if (fromToken !== 'ETH') {
                 const fromTokenAmount = web3.utils.toWei(amount.toString(), 'ether');
                 const allowance = await checkAllowance(fromToken, accounts[0], contract.options.address);
-                if (new BN(allowance).lt(new BN(fromTokenAmount))) {
+                if (new BigNumber(allowance).isLessThan(new BigNumber(fromTokenAmount))) {
                     await setAllowance(fromToken, contract.options.address, fromTokenAmount);
                 }
             }
-
+    
             if (fromToken === 'ETH') {
                 await contract.methods.tradeEthForToken(toToken, calculatedAmount.toString())
                     .send({ from: accounts[0], value: web3.utils.toWei(amount.toString(), 'ether') });
@@ -173,6 +184,7 @@ const TokenExchange = ({ web3, accounts, contract, tokenAddresses, updateTokenBa
             alert('Trade failed. See console for details.');
         }
     };
+    
 
     return (
         <div>
