@@ -141,18 +141,21 @@ const TokenExchange = ({ web3, accounts, contract, tokenAddresses, updateTokenBa
         const tempToToken = toToken;
         const tempAmount = amount;
         const tempCalculatedAmountForShow = calculatedAmountforshow;
-
+    
         setFromToken(tempToToken);
         setToToken(tempFromToken);
         setAmount(tempCalculatedAmountForShow);
         setCalculatedAmountforshow(tempAmount);
-
+    
         // Reset warnings
         setUserBalanceWarning('');
         setPlatformBalanceWarning('');
-
+    
+        // Update the exchange rate and check balances with swapped tokens
+        updateExchangeRate(tempToToken, tempFromToken, tempCalculatedAmountForShow);
         checkBalances(tempToToken, tempFromToken, tempCalculatedAmountForShow, tempAmount);
     };
+    
 
     
     const executeTrade = async () => {
