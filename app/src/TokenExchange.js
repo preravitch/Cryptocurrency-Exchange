@@ -322,7 +322,7 @@ const TokenExchange = ({
                 </div>
 
                 <input type="text" value={calculatedAmountforshow} readOnly />
-                <p>
+                <p className="fee">
                     Trading Fee 0.01%:
                     <br />
                     {web3.utils.fromWei(calculatedFee.toString(), "ether")}{" "}
