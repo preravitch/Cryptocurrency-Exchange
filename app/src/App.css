@@ -45,7 +45,7 @@ body {
 span {
     color: #a6ff89;
 }
-/* ------------------ Typography ------------------- */
+/* ------------------ Tfypography ------------------- */
 h1,
 h2,
 h3,
@@ -109,8 +109,8 @@ textarea {
     height: 90vh;
 }
 .leftSection {
-    width: 60%;
-    padding: 0 10%;
+    width: 100%;
+    padding: 0 5%;
     display: flex;
     justify-content: center;
     align-items: center;
