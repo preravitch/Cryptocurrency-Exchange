@@ -15,7 +15,24 @@ function App() {
     const [platformTokenBalances, setPlatformTokenBalances] = useState({});
     const [userTokenBalances, setUserTokenBalances] = useState({});
     const [walletAddress, setWalletAddress] = useState("");
+    const initWeb3 = async () => {
+        console.log("pressed");
 
+        try {
+            const web3Instance = await getWeb3();
+            const accounts = await web3Instance.eth.getAccounts();
+            const contractInstance = new web3Instance.eth.Contract(
+                MockExchange.abi,
+                contractAddress
+            );
+
+            setWeb3(web3Instance);
+            setAccounts(accounts);
+            setContract(contractInstance);
+        } catch (error) {
+            console.error("Error in initWeb3:", error);
+        }
+    };
     useEffect(() => {
         getCurrentWalletConnected();
         addWalletListener();
@@ -40,6 +57,7 @@ function App() {
             /* MetaMask is not installed */
             console.log("Please install MetaMask");
         }
+        initWeb3();
     };
 
     const getCurrentWalletConnected = async () => {
@@ -124,25 +142,6 @@ function App() {
         setUserTokenBalances(userBalances);
     };
 
-    const initWeb3 = async () => {
-        console.log("pressed");
-
-        try {
-            const web3Instance = await getWeb3();
-            const accounts = await web3Instance.eth.getAccounts();
-            const contractInstance = new web3Instance.eth.Contract(
-                MockExchange.abi,
-                contractAddress
-            );
-
-            setWeb3(web3Instance);
-            setAccounts(accounts);
-            setContract(contractInstance);
-        } catch (error) {
-            console.error("Error in initWeb3:", error);
-        }
-    };
-
     useEffect(() => {
         if (web3 && accounts && contract) {
             updateTokenBalances();
@@ -197,13 +196,14 @@ function App() {
                             <h1> Crypto exchange platform</h1>
                             <h2>Everyone's Favorite DEX</h2>
                             <p>
-                                Trade, earn, and own crypto on the all-in-one
-                                multichain DEX Trade, earn, and own crypto on
-                                the all-in-one multichain DEX Trade, earn, and
-                                own crypto on the all-in-one multichain DEX
-                                Trade, earn, and own crypto on the all-in-one
-                                multichain DEX Trade, earn, and own crypto on
-                                the all-in-one multichain DEX
+                                Delve into the expansive world of cryptocurrency
+                                by actively participating in trading, and
+                                establishing ownership across a diverse array of
+                                digital currencies. All these opportunities
+                                unfold seamlessly within the comprehensive
+                                multichain DEX platform, enabling you to
+                                explore, transact, and hold various crypto
+                                assets across multiple blockchain networks.
                             </p>
                         </div>
                     </div>
